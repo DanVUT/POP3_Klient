@@ -1,0 +1,25 @@
+README
+
+POP3 klient aplikácia, ktorá sťahuje všetky alebo iba nové správy. Podporuje IPv4 aj IPv6 adresy. 
+
+popcl <server> [-p <port>] [-T|-S [-c <certfile>] [-C <certaddr>]] [-d] [-n] -a <auth_file> -o <out_dir> 
+
+Povinné argumenty programu sú: 
+<Server> – na ktorý sa pripájame. Vo forme mena, IPv4 aj IPv6 adresy.
+-a Autentizačný súbor – Súbor obsahujúci prihlasovacie údaje na daný server.
+-o Output priečinok – Priečinok, kde sa uložia všetky prijaté emaily. 
+Voliteľné argumenty sú: 
+-T – Zapína šifrovanú komunikáciu od začiatku, v prípade, že nie je nastavený prepínač pre nastavenie portu, tak sa implicitne nastaví port 995 na ktorom pop3s za normálnych prípadov funguje.
+-S – Zapína nešifrovanú komunikáciu, v prípade nenastaveného portu na porte 110 a po prijatí welcome správy od serveru pomocou „STLS“ príkazu zapína šifrovanú komunikáciu. 
+-c certfile – v prípade prepínačov –T alebo –S môžeme špecifikovať súbor, ktorým budeme overovať certifikát, ktorý nám odošle server. 
+-C certaddr – v prípade prepínačov –T alebo –S môžeme špecifikovať adresár s certifikátmi, ktorými budeme overovať certifikát, ktorý nám odošle server.
+-p port – týmto prepínačom môžeme špecifikovať vlastný port na ktorý sa chceme pripojiť. 
+-d – prepínač, ktorý definuje, že sa majú vymazať správy. V mojej variante riešenia mažem správy ktoré reálne prijímam a zapisujem do output directory, takže v prípade kombinácie s prepínačom –n mažem iba nové správy. 
+-n – prepínač, ktorý definuje, že sa majú prijať len nové správy. V mojej variante riešenia prijímam tie správy, ktoré náš klient pre daného používateľa ešte neprijal. 
+
+Problémy pri implementácií a popis zvolených riešení:
+- -n prepínač prijíma nové správy na základe Message-ID. Ale pri testovaní sa prišlo na to, že niektoré správy Message-ID nemajú, takže tieto správy sa ukladajú ako non-ID + poradové číslo. Tieto správy ale keďže nemajú Message-ID, tak ich nevieme ako evidovať, že sme ich už prijali, takže sa prijmú vždy, aj keď prijímame iba nové správy. To isté platí aj pri mazaní. Tieto správy sa zmažú vždy, aj keď by sme mali zmazať iba nové správy.
+-Keď sa sťahujú emaily bez –n prepínača, tak sa stiahnuté emaily nezaznamenávajú ako stiahnuté, takže pri použití –n prepínača sa emaily stiahnú znovu, aj keď už boli stiahnuté bez –n prepínača.
+- -d prepínač maže správy, ktoré sa zapisujú na disk, takže v prípade bez prepínača –n sa vymažú všetky správy. V prípade že bol zadaný prepínač –n tak sa zmažú iba nové správy. 
+- Pri testovaní prijímania správ som narazil na problém, že pri niektorých správach minimálne na serveroch seznam.cz, centrum.cz, centrum.sk sa mi stávalo to, že server pri odosielaní správy deklaroval, že odošle určitý počet bajtov, ale po prijatí daného počtu bajtov socket nebol prázdny a ostalo tam pár bajtov navyše, takže som bol odkázaný ešte precykliť a konkatenovať k správe tie zvyšné bajty, až kým sa socket nevyprázdnil.  Output priečinok musí existovať, v opačnom prípade sa nezapíše nič. 
+- V prípade použití prepínačov pre šifrovanú komunikáciu –T a –S a nešpecifikovaní žiadnych certifikátov sa musí použiť predvolený systémový adresár s certifikátmi. V mojej variante riešenia takéto správanie nastáva aj v prípade, že používateľ špecifikuje do certfile alebo certaddr prípadne do oboch naraz prázdny reťazec. 
